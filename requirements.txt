@@ -1,0 +1,20 @@
+# ──────────────────────────────────────────────
+# Telegram Bot + Stream API — Dependencies
+# ──────────────────────────────────────────────
+# Install with: pip install -r requirements.txt
+# ──────────────────────────────────────────────
+
+# ── Bot (file_id extractor) ──
+python-telegram-bot==21.6
+
+# ── Database ──
+PyMySQL==1.1.1
+
+# ── Config ──
+python-dotenv==1.0.1
+
+# ── Stream API ──
+pyrogram==2.0.106
+tgcrypto==1.2.5
+fastapi==0.115.6
+uvicorn==0.34.0

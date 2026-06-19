@@ -1,0 +1,8 @@
+# Tells Render to ignore unnecessary files during build
+__pycache__/
+*.pyc
+.env
+.git/
+*.md
+schema.sql
+.env.example

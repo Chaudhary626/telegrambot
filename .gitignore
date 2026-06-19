@@ -1,0 +1,21 @@
+# Environment variables (contains secrets)
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Conversation summary (not needed on server)
+CONVERSATION_SUMMARY.md
+
+# Agents
+.agents/

@@ -1,0 +1,156 @@
+<!--
+═══════════════════════════════════════════════════════
+  AnimeGalaxyHub — Embed Code Example
+═══════════════════════════════════════════════════════
+
+  Copy-paste this into ANY page on your website
+  to add a video player for a specific video.
+
+  Just change the VIDEO_ID to the database ID of the video.
+═══════════════════════════════════════════════════════
+-->
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- METHOD 1: Simple Embed (Recommended)       -->
+<!-- Just paste this wherever you want a player  -->
+<!-- ═══════════════════════════════════════════ -->
+
+<div id="video-container" style="max-width: 900px; margin: 0 auto;">
+
+    <!-- Player loads here -->
+    <div id="player-wrapper" style="
+        position: relative;
+        width: 100%;
+        background: #000;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    ">
+        <video id="main-player" playsinline controls style="width: 100%; display: block;">
+            <!-- Source will be set by JavaScript -->
+        </video>
+    </div>
+
+    <!-- Video info loads here -->
+    <div id="video-info" style="
+        margin-top: 16px;
+        padding: 16px 20px;
+        background: #1a1a24;
+        border-radius: 10px;
+        color: #e4e4e7;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    "></div>
+</div>
+
+<!-- Plyr.js (beautiful video player) -->
+<link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+<script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+
+<style>
+    :root {
+        --plyr-color-main: #8b5cf6;
+    }
+</style>
+
+<script>
+/**
+ * ════════════════════════════════════════════
+ *  CONFIGURATION — Edit these values
+ * ════════════════════════════════════════════
+ */
+
+// ⚠️ Change this to the database ID of the video you want to play
+const VIDEO_ID = 1;
+
+// ⚠️ Change this to your actual stream_helper.php URL
+const HELPER_URL = '/stream_helper.php';
+
+/**
+ * ════════════════════════════════════════════
+ *  PLAYER LOGIC — Don't edit below this
+ * ════════════════════════════════════════════
+ */
+
+// Initialize Plyr
+const player = new Plyr('#main-player', {
+    controls: [
+        'play-large', 'play', 'rewind', 'fast-forward', 'progress',
+        'current-time', 'duration', 'mute', 'volume',
+        'settings', 'pip', 'airplay', 'fullscreen'
+    ],
+    settings: ['speed'],
+    speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
+    keyboard: { focused: true, global: true },
+    tooltips: { controls: true, seek: true },
+    seekTime: 10,
+});
+
+// Load video from API
+async function loadVideo(videoId) {
+    try {
+        const response = await fetch(`${HELPER_URL}?action=get_url&id=${videoId}`);
+        const data = await response.json();
+
+        if (!data.success) {
+            document.getElementById('video-info').innerHTML =
+                `<p style="color: #ef4444;">❌ Video not found</p>`;
+            return;
+        }
+
+        // Set the video source
+        const videoEl = document.getElementById('main-player');
+        videoEl.src = data.stream_url;
+        videoEl.load();
+
+        // Show video info
+        document.getElementById('video-info').innerHTML = `
+            <h3 style="margin: 0 0 10px; color: #fff; font-size: 1.2rem;">
+                ${data.title}
+            </h3>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                <span style="padding: 4px 12px; background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.3); border-radius: 6px; font-size: 0.85rem; color: #c4b5fd;">
+                    🎞 ${data.quality}
+                </span>
+                <span style="padding: 4px 12px; background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.3); border-radius: 6px; font-size: 0.85rem; color: #c4b5fd;">
+                    🗣 ${data.language}
+                </span>
+                ${data.episode !== 'Unknown' ? `
+                <span style="padding: 4px 12px; background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.3); border-radius: 6px; font-size: 0.85rem; color: #c4b5fd;">
+                    📺 ${data.episode}
+                </span>` : ''}
+                <span style="padding: 4px 12px; background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.3); border-radius: 6px; font-size: 0.85rem; color: #c4b5fd;">
+                    📏 ${data.size_human}
+                </span>
+            </div>
+        `;
+
+    } catch (error) {
+        console.error('Failed to load video:', error);
+        document.getElementById('video-info').innerHTML =
+            `<p style="color: #ef4444;">❌ Failed to load video</p>`;
+    }
+}
+
+// Load the video when page is ready
+loadVideo(VIDEO_ID);
+</script>
+
+
+<!--
+═══════════════════════════════════════════════════════
+  METHOD 2: Quick iframe embed (even simpler)
+═══════════════════════════════════════════════════════
+
+  If you just want a quick embed without any PHP/JS:
+
+  <iframe
+      src="https://your-stream-api.onrender.com/player/FILE_ID_HERE?key=YOUR_SECRET&s=FILE_SIZE"
+      width="100%"
+      height="500"
+      frameborder="0"
+      allowfullscreen
+      style="border-radius: 12px;">
+  </iframe>
+
+═══════════════════════════════════════════════════════
+-->
