@@ -5,7 +5,7 @@
 # ──────────────────────────────────────────────
 
 # ── Bot (file_id extractor) ──
-python-telegram-bot==21.6
+python-telegram-bot[webhooks]==21.6
 
 # ── Database ──
 PyMySQL==1.1.1
