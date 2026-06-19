@@ -10,6 +10,7 @@ Compatible with Hostinger MySQL databases.
 import pymysql
 from pymysql.cursors import DictCursor
 from datetime import datetime
+import re
 
 import config
 
@@ -209,6 +210,81 @@ class Database:
                 return result['count'] if result else 0
         except pymysql.Error as e:
             print(f"❌ Count failed: {e}")
+            return 0
+
+    def find_movie_by_title(self, title: str) -> dict | None:
+        """
+        Fuzzy search for a movie in the website's movies table.
+        Used to auto-link extracted Telegram channel video files.
+        """
+        self.ensure_connection()
+        try:
+            with self.connection.cursor() as cursor:
+                # 1. Try exact match
+                cursor.execute("SELECT id, title, slug, content_type FROM movies WHERE title = %s AND status = 1", (title,))
+                row = cursor.fetchone()
+                if row:
+                    return row
+
+                # 2. Try partial match
+                cursor.execute("SELECT id, title, slug, content_type FROM movies WHERE title LIKE %s AND status = 1 LIMIT 1", (f"%{title}%",))
+                row = cursor.fetchone()
+                if row:
+                    return row
+
+                # 3. Clean up common words and try again
+                cleaned_title = re.sub(r'\b(?:the|a|an|of|and|in|on|at|to|for|with|by|season|episode|ep|s\d+e\d+|movie|anime)\b', '', title, flags=re.IGNORECASE)
+                cleaned_title = re.sub(r'\s+', ' ', cleaned_title).strip()
+                if len(cleaned_title) > 3:
+                    cursor.execute("SELECT id, title, slug, content_type FROM movies WHERE title LIKE %s AND status = 1 LIMIT 1", (f"%{cleaned_title}%",))
+                    row = cursor.fetchone()
+                    if row:
+                        return row
+        except pymysql.Error as e:
+            print(f"❌ Failed to find movie by title: {e}")
+        return None
+
+    def save_streaming_source(self, data: dict) -> int:
+        """
+        Insert or update a streaming source directly in the website's streaming_sources table.
+        This enables instant, fully automated playback on the watch page.
+        """
+        self.ensure_connection()
+
+        insert_sql = """
+        INSERT INTO streaming_sources (
+            movie_id, season, episode, language, quality, telegram_file_id,
+            stream_url, file_size_mb, duration_seconds, title, stream_method,
+            is_active, sort_order
+        ) VALUES (
+            %(movie_id)s, %(season)s, %(episode)s, %(language)s, %(quality)s, %(telegram_file_id)s,
+            %(stream_url)s, %(file_size_mb)s, %(duration_seconds)s, %(title)s, %(stream_method)s,
+            %(is_active)s, %(sort_order)s
+        ) ON DUPLICATE KEY UPDATE
+            telegram_file_id = VALUES(telegram_file_id),
+            stream_url = VALUES(stream_url),
+            file_size_mb = VALUES(file_size_mb),
+            duration_seconds = VALUES(duration_seconds),
+            title = VALUES(title)
+        """
+        try:
+            with self.connection.cursor() as cursor:
+                cursor.execute(insert_sql, data)
+                # If ON DUPLICATE KEY UPDATE was triggered, return the row ID of existing match
+                if cursor.lastrowid:
+                    return cursor.lastrowid
+                
+                # Otherwise query the ID by unique key constraint values
+                query_sql = """
+                SELECT id FROM streaming_sources 
+                WHERE movie_id = %(movie_id)s AND season = %(season)s AND episode = %(episode)s 
+                  AND language = %(language)s AND quality = %(quality)s LIMIT 1
+                """
+                cursor.execute(query_sql, data)
+                res = cursor.fetchone()
+                return res['id'] if res else 1
+        except pymysql.Error as e:
+            print(f"❌ Failed to save streaming source: {e}")
             return 0
 
     def close(self):
